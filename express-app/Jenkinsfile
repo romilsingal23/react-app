@@ -52,7 +52,7 @@ pipeline {
                 container('docker') {
                     script {
                         // Build Docker image from Dockerfile
-                        sh 'docker build -t rjshk013/express-app:latest .'
+                        sh 'docker build -t rjshk013/express-app:latest -f express-app/Dockerfile express-app/'
                     }
                 }
             }
