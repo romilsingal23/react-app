@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            // Define the pod template
+            // Define the pod template with Docker-in-Docker (DinD)
             yaml """
             apiVersion: v1
             kind: Pod
@@ -12,23 +12,66 @@ pipeline {
                 command:
                 - cat
                 tty: true
+              - name: docker
+                image: docker:24.0.0
+                command:
+                - dockerd-entrypoint.sh
+                args:
+                - --host=tcp://127.0.0.1:2375
+                - --host=unix:///var/run/docker.sock
+                securityContext:
+                  privileged: true
+                volumeMounts:
+                - name: workspace-volume
+                  mountPath: /home/jenkins/agent
+              volumes:
+              - name: workspace-volume
+                emptyDir: {}
             """
             defaultContainer 'nodejs'
         }
     }
-    
+
     stages {
-        stage('Get a nodejs project') {
+        stage('Verify Docker Setup') {
             steps {
-                container('nodejs') {
+                container('docker') {
                     script {
-                        stage('Check Node.js Version') {
-                            sh 'node --version'
+                        // Verify Docker CLI is installed
+                        sh 'docker --version'
+
+                        // Verify Docker Daemon is running by running a simple container
+                        sh 'docker run --rm hello-world'
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                container('docker') {
+                    script {
+                        // Build Docker image from Dockerfile
+                        sh 'docker build -t rjshk013/express-app:latest .'
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                container('docker') {
+                    script {
+                        // Push the Docker image to Docker Hub
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                            sh 'docker push rjshk013/express-app:latest'
                         }
                     }
                 }
             }
         }
     }
+
 
 }
