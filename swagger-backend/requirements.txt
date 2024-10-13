@@ -1,0 +1,8 @@
+Flask==2.0.2
+Werkzeug==2.0.3
+Flask-SQLAlchemy==2.5.1
+Flasgger==0.9.5
+psycopg2-binary==2.9.1
+SQLAlchemy==1.3.24  # Pin the compatible version of SQLAlchemy
+flask-cors==3.0.10  # Add this line
+
