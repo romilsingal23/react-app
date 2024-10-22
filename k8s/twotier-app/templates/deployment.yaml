@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-frontend
+  labels:
+    app: {{ .Release.Name }}-frontend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+    spec:   
+      containers:
+        - name: myfrontend-app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.frontendPort }}
+    env:
+      - name: REACT_APP_BACKEND_URL
+        value: {{ .Values.env.REACT_APP_BACKEND_URL }}            
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: {{ .Release.Name }}-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-backend
+    spec:
+      nodeSelector:
+        role: backend-db-node      
+      containers:
+        - name: mybackend-app
+          image: "{{ .Values.backend.repository }}:{{ .Values.backend.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.backendPort }}
+          env:
+            - name: POSTGRES_USER
+              value: "{{ .Values.backend.env.POSTGRES_USER }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.backend.env.POSTGRES_PASSWORD }}"
+            - name: POSTGRES_HOST
+              value: "{{ .Values.backend.env.POSTGRES_HOST }}"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.backend.env.POSTGRES_PORT }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.backend.env.POSTGRES_DB }}"
+

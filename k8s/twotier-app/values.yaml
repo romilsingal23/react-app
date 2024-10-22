@@ -1,0 +1,53 @@
+replicaCount: 1
+
+image:
+  repository: rjshk013/react-frontend-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:  # Move env to the top level
+  REACT_APP_BACKEND_URL: "http://172.18.0.2:32001"
+
+backend:
+  repository: rjshk013/swagger-backend
+  tag: latest
+  env:
+    POSTGRES_USER: "postgres"
+    POSTGRES_PASSWORD: "admin"
+    POSTGRES_HOST: "mypostgres-service"
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: "postgres"  
+
+postgresql:
+  image: postgres:latest  # Official PostgreSQL image
+  username: postgres
+  password: admin
+  database: postgres
+service:
+  type: NodePort
+  frontendPort: 80
+  backendPort: 5000
+  nodePort: 32000
+  backendNodePort: 32001
+  dbPort: 5432
+serviceAccount:
+  create: true          # Set to false if you don't need a ServiceAccount created
+  name: ""              # Name of the ServiceAccount (if empty, Helm will use the default name)
+  annotations: {} 
+
+ingress:
+  enabled: false       # Set to true if you want to enable ingress
+  annotations: {}      # You can add any annotations required for the ingress
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []              # TLS configuration (optional)
+resources:
+  limits:
+    memory: "256Mi"
+    cpu: "500m"
+  requests:
+    memory: "128Mi"
+    cpu: "250m"
