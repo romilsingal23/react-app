@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: troubleshooting-pod
-  namespace: rabbit
+  namespace: two-tierapp
 spec:
   containers:
   - name: busybox

@@ -19,9 +19,9 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - containerPort: {{ .Values.service.frontendPort }}
-    env:
-      - name: REACT_APP_BACKEND_URL
-        value: {{ .Values.env.REACT_APP_BACKEND_URL }}            
+          env:  # Ensure `env` is under the container spec
+            - name: REACT_APP_BACKEND_URL
+              value: "{{ .Values.env.REACT_APP_BACKEND_URL }}"         
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -48,13 +48,22 @@ spec:
             - containerPort: {{ .Values.service.backendPort }}
           env:
             - name: POSTGRES_USER
-              value: "{{ .Values.backend.env.POSTGRES_USER }}"
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
-              value: "{{ .Values.backend.env.POSTGRES_PASSWORD }}"
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
             - name: POSTGRES_HOST
               value: "{{ .Values.backend.env.POSTGRES_HOST }}"
             - name: POSTGRES_PORT
               value: "{{ .Values.backend.env.POSTGRES_PORT }}"
             - name: POSTGRES_DB
-              value: "{{ .Values.backend.env.POSTGRES_DB }}"
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_DB
 

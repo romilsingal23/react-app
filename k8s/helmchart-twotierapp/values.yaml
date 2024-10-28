@@ -12,17 +12,19 @@ backend:
   repository: rjshk013/swagger-backend
   tag: latest
   env:
-    POSTGRES_USER: "postgres"
-    POSTGRES_PASSWORD: "admin"
     POSTGRES_HOST: "mypostgres-service"
     POSTGRES_PORT: "5432"
-    POSTGRES_DB: "postgres"  
+
 
 postgresql:
   image: postgres:latest  # Official PostgreSQL image
-  username: postgres
-  password: admin
-  database: postgres
+  
+# Define secret values for PostgreSQL credentials
+secrets:
+  postgres:
+    POSTGRES_USER: "postgres"
+    POSTGRES_PASSWORD: "admin"
+    POSTGRES_DB: "postgres"
 service:
   type: NodePort
   frontendPort: 80
