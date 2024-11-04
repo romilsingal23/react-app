@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: {{ .Release.Name }}-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-backend
+    spec:
+      nodeSelector:
+        role: backend-db-node      
+      containers:
+        - name: mybackend-app
+          image: "{{ .Values.backend.repository }}:{{ .Values.backend.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.backendPort }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_HOST
+              value: "{{ .Values.backend.env.POSTGRES_HOST }}"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.backend.env.POSTGRES_PORT }}"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_DB
+      initContainers:
+        - name: db-migrations
+          image: "{{ .Values.backend.repository }}:{{ .Values.backend.tag }}"  # Use the same backend image to run migrations
+          command: ["sh", "-c"]
+          args:
+            - |
+              if [ ! -d "migrations" ]; then
+                flask db init &&
+                flask db migrate -m "Initial migration for User model" &&
+                flask db upgrade &&
+                flask insert_admin_user
+              else
+                flask db upgrade &&
+                flask insert_admin_user
+              fi
+          env:
+            - name: FLASK_APP
+              value: app.py
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_HOST
+              value: "{{ .Values.backend.env.POSTGRES_HOST }}"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.backend.env.POSTGRES_PORT }}"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_DB
