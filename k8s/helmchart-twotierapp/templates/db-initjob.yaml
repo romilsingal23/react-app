@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-db-init
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  backoffLimit: 4
+  activeDeadlineSeconds: 300  # 5 minute timeout
+  template:
+    spec:
+      nodeSelector:
+        role: backend-db-node  # Same node as backend & database
+      containers:
+      - name: db-init
+        image: {{ .Values.backend.repository }}:{{ .Values.backend.tag }}
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          # Use Flask/Python to check PostgreSQL
+          echo "Waiting for PostgreSQL to be ready using SQLAlchemy..."
+          python -c "
+          import time, os, sys
+          from sqlalchemy import create_engine
+          from sqlalchemy.exc import OperationalError
+          
+          user = os.environ['POSTGRES_USER']
+          password = os.environ['POSTGRES_PASSWORD']
+          host = os.environ['POSTGRES_HOST']
+          port = os.environ['POSTGRES_PORT']
+          db = os.environ['POSTGRES_DB']
+          
+          url = f'postgresql://{user}:{password}@{host}:{port}/{db}'
+          max_attempts = 30
+          attempt = 0
+          
+          while True:
+              attempt += 1
+              try:
+                  print(f'Attempt {attempt}/{max_attempts} to connect to database...')
+                  engine = create_engine(url)
+                  connection = engine.connect()
+                  connection.close()
+                  print('Database is ready!')
+                  break
+              except OperationalError as e:
+                  print(f'Database not ready yet: {e}')
+                  if attempt >= max_attempts:
+                      print('Max attempts reached, giving up')
+                      sys.exit(1)
+                  time.sleep(2)
+          "
+          
+          echo "PostgreSQL is ready! Running database migrations..."
+          
+          # Now run the Flask commands
+          cd /app  # Adjust this path to your app directory if needed
+          
+          # Initialize if not already initialized
+          if [ ! -d "migrations" ]; then
+            echo "Running flask db init..."
+            flask db init
+          else
+            echo "Migrations directory already exists, skipping init"
+          fi
+          
+          echo "Running flask db migrate..."
+          flask db migrate -m "Initial migration from Kubernetes job"
+          
+          echo "Running flask db upgrade..."
+          flask db upgrade
+          
+          echo "Creating admin user..."
+          flask insert_admin_user
+          
+          echo "Database initialization completed successfully!"
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secrets
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secrets
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_HOST
+            value: "{{ .Values.backend.env.POSTGRES_HOST }}"
+          - name: POSTGRES_PORT
+            value: "{{ .Values.backend.env.POSTGRES_PORT }}"
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secrets
+                key: POSTGRES_DB
+      restartPolicy: OnFailure
