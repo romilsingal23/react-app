@@ -19,9 +19,18 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - containerPort: {{ .Values.service.frontendPort }}
-          env:  # Ensure `env` is under the container spec
-            - name: REACT_APP_BACKEND_URL
-              value: "{{ .Values.env.REACT_APP_BACKEND_URL }}"         
+     
+          volumeMounts:
+            - name: config-volume
+              mountPath: /usr/share/nginx/html/config.js
+              subPath: config.js
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}-frontend-config
+
+
+
 ---
 apiVersion: apps/v1
 kind: Deployment
