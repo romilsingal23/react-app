@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: rjshk013/medium-blog-frontend
-  tag: 11
+  tag: 12
   pullPolicy: IfNotPresent
 
 #env:  # Move env to the top level
@@ -12,7 +12,7 @@ frontend:
     REACT_APP_BACKEND_URL: "http://172.18.0.2:32001"
 backend:
   repository: rjshk013/medium-blog-backend
-  tag: 11
+  tag: 12
   env:
     POSTGRES_HOST: "mypostgres-service"
     POSTGRES_PORT: "5432"
