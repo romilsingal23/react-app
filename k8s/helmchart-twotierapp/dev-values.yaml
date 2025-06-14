@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: tecnotes/medium-blog-frontend
-  tag: 1
+  repository: tecnotes/flask-app-frontend
+  tag: latest
   pullPolicy: IfNotPresent
 
 #env:  # Move env to the top level
@@ -11,8 +11,8 @@ frontend:
   config:
     REACT_APP_BACKEND_URL: "http://172.18.0.2:32001"
 backend:
-  repository: tecnotes/medium-blog-backend
-  tag: 1
+  repository: tecnotes/flask-app-backend
+  tag: latest
   env:
     POSTGRES_HOST: "mypostgres-service"
     POSTGRES_PORT: "5432"
