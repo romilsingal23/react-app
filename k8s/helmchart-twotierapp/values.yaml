@@ -1,18 +1,18 @@
 replicaCount: 1
 
 image:
-  repository: rjshk013/react-frontend
-  tag: v1.0.0
+  repository: romilsingal2024/react-frontend
+  tag: v1.0.1
   pullPolicy: IfNotPresent
 
 #env:  # Move env to the top level
   #REACT_APP_BACKEND_URL: "http://172.18.0.2:32001"
 frontend:
   config:
-    REACT_APP_BACKEND_URL: "http://172.18.0.2:32001"
+    REACT_APP_BACKEND_URL: "http://mybackend-service:5000"
 backend:
-  repository: rjshk013/flask-backend
-  tag: v1.0.0
+  repository: romilsingal2024/flask-backend
+  tag: v1.0.1
   env:
     POSTGRES_HOST: "mypostgres-service"
     POSTGRES_PORT: "5432"
@@ -28,11 +28,10 @@ secrets:
     POSTGRES_PASSWORD: "admin"
     POSTGRES_DB: "postgres"
 service:
-  type: NodePort
+  type: ClusterIP
+  ingressPort: 80
   frontendPort: 80
   backendPort: 5000
-  # frontendnodePort: 32000
-  backendNodePort: 32001
   dbPort: 5432
 serviceAccount:
   create: true          # Set to false if you don't need a ServiceAccount created
@@ -40,7 +39,7 @@ serviceAccount:
   annotations: {} 
 
 ingress:
-  enabled: false       # Set to true if you want to enable ingress
+  enabled: true       # Set to true if you want to enable ingress
   annotations: {}      # You can add any annotations required for the ingress
   hosts:
     - host: chart-example.local
